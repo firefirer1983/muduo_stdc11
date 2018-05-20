@@ -3,15 +3,17 @@
 #include <examples/curl/Curl.h>
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>
-#include <boost/bind.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <sstream>
+#include <vector>
+#include <functional>
+#include <muduo/base/noncopyable.h>
 
 using namespace muduo;
 using namespace muduo::net;
 
-typedef boost::shared_ptr<FILE> FilePtr;
+
+typedef std::shared_ptr<FILE> FilePtr;
 
 template<int N>
 bool startWith(const string& str, const char (&prefix)[N])
@@ -19,13 +21,13 @@ bool startWith(const string& str, const char (&prefix)[N])
   return str.size() >= N-1 && std::equal(prefix, prefix+N-1, str.begin());
 }
 
-class Piece : boost::noncopyable
+class Piece :noncopyable
 {
  public:
   Piece(const curl::RequestPtr& req,
         const FilePtr& out,
         const muduo::string& range,
-        const boost::function<void()> done)
+        const std::function<void()> done)
     : req_(req),
       out_(out),
       range_(range),
@@ -34,9 +36,9 @@ class Piece : boost::noncopyable
     LOG_INFO << "range: " << range;
     req->setRange(range);
     req_->setDataCallback(
-        boost::bind(&Piece::onData, this, _1, _2));
+        std::bind(&Piece::onData, this, _1, _2));
     req_->setDoneCallback(
-        boost::bind(&Piece::onDone, this, _1, _2));
+        std::bind(&Piece::onDone, this, _1, _2));
   }
  private:
   void onData(const char* data, int len)
@@ -55,10 +57,10 @@ class Piece : boost::noncopyable
   curl::RequestPtr req_;
   FilePtr out_;
   muduo::string range_;
-  boost::function<void()> doneCb_;
+  std::function<void()> doneCb_;
 };
 
-class Downloader : boost::noncopyable
+class Downloader : noncopyable
 {
  public:
   Downloader(EventLoop* loop, const string& url)
@@ -73,9 +75,9 @@ class Downloader : boost::noncopyable
       concurrent_(0)
   {
     req_->setHeaderCallback(
-        boost::bind(&Downloader::onHeader, this, _1, _2));
+        std::bind(&Downloader::onHeader, this, _1, _2));
     req_->setDoneCallback(
-        boost::bind(&Downloader::onHeaderDone, this, _1, _2));
+        std::bind(&Downloader::onHeaderDone, this, _1, _2));
     req_->headerOnly();
   }
 
@@ -118,9 +120,9 @@ class Downloader : boost::noncopyable
         req_.reset();
         req2_ = curl_.getUrl(url_);
         req2_->setDataCallback(
-            boost::bind(&Downloader::onData, this, _1, _2));
+            std::bind(&Downloader::onData, this, _1, _2));
         req2_->setDoneCallback(
-            boost::bind(&Downloader::onDownloadDone, this));
+            std::bind(&Downloader::onDownloadDone, this));
         concurrent_ = 1;
       }
       else
@@ -158,10 +160,10 @@ class Downloader : boost::noncopyable
         {
           range << i * pieceLen << "-" << length_ - 1;
         }
-        pieces_.push_back(new Piece(req,
-                                    out,
-                                    range.str().c_str(), // std::string -> muduo::string
-                                    boost::bind(&Downloader::onDownloadDone, this)));
+				pieces_.push_back(std::unique_ptr<Piece>(new Piece(req,
+                                                            out,
+                                                            range.str().c_str(), // std::string -> muduo::string
+                                                            std::bind(&Downloader::onDownloadDone, this))));
       }
       else
       {
@@ -193,7 +195,7 @@ class Downloader : boost::noncopyable
   bool acceptRanges_;
   int64_t length_;
   FilePtr out_;
-  boost::ptr_vector<Piece> pieces_;
+	std::vector<std::unique_ptr<Piece> > pieces_;
   int concurrent_;
 
   const static int kConcurrent = 4;
@@ -203,7 +205,9 @@ int main(int argc, char* argv[])
 {
   EventLoop loop;
   curl::Curl::initialize(curl::Curl::kCURLssl);
-  string url = argc > 1 ? argv[1] : "https://chenshuo-public.s3.amazonaws.com/pdf/allinone.pdf";
+//  string url = argc > 1 ? argv[1] : "https://chenshuo-public.s3.amazonaws.com/pdf/allinone.pdf";
+	string url = argc > 1 ? argv[1] : "http://ota.iservernetwork.com/files/2018/05/19/1526696252.update.zip";
+
   Downloader d(&loop, url);
   loop.loop();
 }
