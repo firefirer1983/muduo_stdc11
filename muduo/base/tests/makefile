@@ -9,7 +9,7 @@ CXX			= g++
 CXXFLAGS	= -std=c++11 -ggdb3 -Wall -Werror
 CXX_MACRO	=
 
-BASE_DIR    = ../../../
+BASE_DIR    = ../../..
 INC_DIR		= $(BASE_DIR)
 SRC_DIR		= ./
 OBJ_DIR		= obj
@@ -17,20 +17,21 @@ LIB_DIR		= lib
 BIN_DIR		= bin
 
 MUDUO_INC   = -I$(INC_DIR)
-MUDUO_LIB   = -L$(LIB_DIR) -lmuduo_base -lpthread
+MUDUO_LIB   = -L$(BASE_DIR)/build/lib/ -lmuduo
 
-GTEST_INC   = -I$(BASE_DIR)/muduo/other/
-GTEST_LIB   = -L$(BASE_DIR)/muduo/other/gtest/lib/ -lgtest
+GTEST_INC   = -I$(BASE_DIR)/googletest/googletest/include
+GTEST_LIB   = -L$(BASE_DIR)/googletest/build/googlemock/gtest/ -lgtest
 
-ZLIB_INC    = -I$(BASE_DIR)/muduo/other/zlib/inc
-ZLIB_LIB    = -L$(BASE_DIR)/muduo/other/zlib/lib -lz
+#ZLIB_INC    = -I$(BASE_DIR)/muduo/other/zlib/inc
+#ZLIB_LIB    = -L$(BASE_DIR)/muduo/other/zlib/lib -lz
+
+ZLIB_LIB	= -lz
+PTHREAD_LIB = -lpthread
 
 INC			= $(MUDUO_INC) $(GTEST_INC) $(ZLIB_INC)
-LIB			= $(MUDUO_LIB) $(GTEST_LIB) $(ZLIB_LIB)
+LIB			= $(MUDUO_LIB) $(GTEST_LIB) $(PTHREAD_LIB) $(ZLIB_LIB)
 
-MUDUOLIB    = libmuduo_base.a
-BIN			= BoundedBlockingQueue_test
-# AsyncLogging_test Atomic_unittest BlockingQueue_bench BlockingQueue_test BoundedBlockingQueue_test \
+BIN			= BoundedBlockingQueue_test \
  Date_unittest Exception_test FileUtil_test Fork_test LogFile_test LogStream_test \
  LogStream_bench Logging_test Mutex_test ProcessInfo_test Singleton_test \
  SingletonThreadLocal_test ThreadLocalSingleton_test ThreadLocal_test \
@@ -44,23 +45,12 @@ debug release gprof: dir $(addprefix $(LIB_DIR)/,$(MUDUOLIB)) $(addprefix $(BIN_
 
 #@ do not outoupt this command - ingnore its error and continue to make
 dir:
-	@-mkdir -p $(INC_DIR)
-	@-mkdir -p $(SRC_DIR)
 	@-mkdir -p $(OBJ_DIR)
-	@-mkdir -p $(LIB_DIR)
 	@-mkdir -p $(BIN_DIR)
 
-$(OBJ_DIR)/%.o:$(BASE_DIR)/muduo/base/%.cc
-	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $(INC) -c $<
 
 $(OBJ_DIR)/%.o:$(SRC_DIR)/%.cc
 	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $(INC) -c $<
-
-$(LIB_DIR)/libmuduo_base.a:$(addprefix $(OBJ_DIR)/, \
-	Thread.o ThreadPool.o CountDownLatch.o Timestamp.o LogFile.o Logging.o \
-	FileUtil.o LogStream.o TimeZone.o Date.o ProcessInfo.o Exception.o \
-	AsyncLogging.o Timestamp.o Condition.o)
-	$(AR) $(AR_FLAGS) $@ $^
 
 $(BIN_DIR)/Atomic_unittest:$(addprefix $(OBJ_DIR)/, Atomic_unittest.o)
 	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $^
@@ -143,5 +133,4 @@ strip:
 clean:
 	rm -rf  $(OBJ_DIR)
 	rm -rf  $(LIB_DIR)
-	rm -rf  $(BIN_DIR)
 
