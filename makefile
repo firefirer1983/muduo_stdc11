@@ -17,6 +17,7 @@ CXX_INC_FLAGS	= $(foreach path, $(INC_DIR), -I$(path))
 
 SRC_DIR		= muduo/net
 SRC_DIR		+= muduo/base
+SRC_DIR		+= muduo/net/poller
 
 SRC_CC		= $(foreach path, $(SRC_DIR), $(wildcard $(path)/*.cc))
 SRC_H		= $(foreach path, $(SRC_DIR), $(wildcard $(path)/*.h))

@@ -9,66 +9,45 @@ CXX			= g++
 CXXFLAGS	= -std=c++11 -ggdb3 -Wall -Werror
 CXX_MACRO	=
 
-BASE_DIR    = ../../../
+BASE_DIR    = ../../..
 INC_DIR		= $(BASE_DIR)
 SRC_DIR		= ./
 OBJ_DIR		= obj
-LIB_DIR		= lib
 BIN_DIR		= bin
-MUDUOLIB    = libmuduo.a
 
 MUDUO_INC   = -I$(INC_DIR)
-MUDUO_LIB   = -L$(LIB_DIR) -lmuduo -lpthread
+MUDUO_LIB   = -L$(BASE_DIR)/build/lib/ -lmuduo
 
-GTEST_INC   = -I$(BASE_DIR)/muduo/other/
-GTEST_LIB   = -L$(BASE_DIR)/muduo/other/gtest/lib/ -lgtest
+GTEST_INC   = -I$(BASE_DIR)/googletest/googletest/include
+GTEST_LIB   = -L$(BASE_DIR)/googletest/build/googlemock/gtest/ -lgtest
 
-ZLIB_INC    = -I$(BASE_DIR)/muduo/other/zlib/inc
-ZLIB_LIB    = -L$(BASE_DIR)/muduo/other/zlib/lib -lz
+ZLIB_LIB	= -lz
+PTHREAD_LIB = -lpthread
 
 INC			= $(MUDUO_INC) $(GTEST_INC) $(ZLIB_INC)
-LIB			= $(MUDUO_LIB) $(GTEST_LIB) $(ZLIB_LIB)
+LIB			= $(MUDUO_LIB) $(GTEST_LIB) $(PTHREAD_LIB) $(ZLIB_LIB)
 
-BIN			= Channel_test
-# Channel_test EchoClient_unittest EchoServer_unittest EventLoopThreadPool_unittest \
+BIN			= Channel_test \
  EventLoopThread_unittest EventLoop_unittest TcpClient_reg1 TcpClient_reg2 \
  TcpClient_reg3 TimerQueue_unittest InetAddress_unittest Buffer_unittest \
- ZlibStream_unittest
+ ZlibStream_unittest ThreadLoop_test
 
 all: debug release # strip
 
-debug release gprof: dir $(addprefix $(LIB_DIR)/,$(MUDUOLIB)) $(addprefix $(BIN_DIR)/,$(BIN))
+debug release gprof: dir $(addprefix $(BIN_DIR)/,$(BIN))
 
 
 #@ do not outoupt this command - ingnore its error and continue to make
 dir:
-	@-mkdir -p $(INC_DIR)
-	@-mkdir -p $(SRC_DIR)
+
 	@-mkdir -p $(OBJ_DIR)
-	@-mkdir -p $(LIB_DIR)
 	@-mkdir -p $(BIN_DIR)
 
 $(OBJ_DIR)/%.o:$(BASE_DIR)/muduo/base/%.cc
 	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $(INC) -c $<
 
-$(OBJ_DIR)/%.o:$(BASE_DIR)/muduo/net/%.cc
-	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $(INC) -c $<
-
-$(OBJ_DIR)/%.o:$(BASE_DIR)/muduo/net/poller/%.cc
-	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $(INC) -c $<
-
 $(OBJ_DIR)/%.o:$(SRC_DIR)/%.cc
 	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $(INC) -c $<
-
-$(LIB_DIR)/libmuduo.a:$(addprefix $(OBJ_DIR)/, \
-	Thread.o ThreadPool.o CountDownLatch.o Timestamp.o LogFile.o Logging.o \
-	FileUtil.o LogStream.o TimeZone.o Date.o ProcessInfo.o Exception.o \
-	AsyncLogging.o Timestamp.o Condition.o EventLoop.o TcpServer.o \
-	InetAddress.o TcpConnection.o TimerQueue.o Channel.o Socket.o \
-	Poller.o DefaultPoller.o Acceptor.o EventLoopThreadPool.o SocketsOps.o \
-	Timer.o PollPoller.o EPollPoller.o EventLoopThread.o Buffer.o \
-	TcpClient.o Connector.o)
-	$(AR) $(AR_FLAGS) $@ $^
 
 $(BIN_DIR)/Channel_test:$(addprefix $(OBJ_DIR)/, Channel_test.o)
 	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $^ $(LIB)
@@ -109,11 +88,13 @@ $(BIN_DIR)/Buffer_unittest:$(addprefix $(OBJ_DIR)/, Buffer_unittest.o)
 $(BIN_DIR)/ZlibStream_unittest:$(addprefix $(OBJ_DIR)/, ZlibStream_unittest.o)
 	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $^ $(LIB)
 
+$(BIN_DIR)/ThreadLoop_test:$(addprefix $(OBJ_DIR)/, ThreadLoop_test.o)
+	$(CXX) $(CXXFLAGS) $(CXX_MACRO) -o $@ $^ $(LIB)	
+	
 strip:
 	strip $(addprefix $(BIN_DIR)/,$(BIN))
 
 clean:
 	rm -rf  $(OBJ_DIR)
-	rm -rf  $(LIB_DIR)
 	rm -rf  $(BIN_DIR)
 

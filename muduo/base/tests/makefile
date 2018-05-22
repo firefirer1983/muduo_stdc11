@@ -13,17 +13,13 @@ BASE_DIR    = ../../..
 INC_DIR		= $(BASE_DIR)
 SRC_DIR		= ./
 OBJ_DIR		= obj
-LIB_DIR		= lib
 BIN_DIR		= bin
 
 MUDUO_INC   = -I$(INC_DIR)
-MUDUO_LIB   = -L$(BASE_DIR)/build/lib/ -lmuduo
+MUDUO_LIB   = -L$(BASE_DIR)/build/lib/ -lmuduo_base
 
 GTEST_INC   = -I$(BASE_DIR)/googletest/googletest/include
 GTEST_LIB   = -L$(BASE_DIR)/googletest/build/googlemock/gtest/ -lgtest
-
-#ZLIB_INC    = -I$(BASE_DIR)/muduo/other/zlib/inc
-#ZLIB_LIB    = -L$(BASE_DIR)/muduo/other/zlib/lib -lz
 
 ZLIB_LIB	= -lz
 PTHREAD_LIB = -lpthread
@@ -132,5 +128,5 @@ strip:
 
 clean:
 	rm -rf  $(OBJ_DIR)
-	rm -rf  $(LIB_DIR)
+	rm -rf  $(BIN_DIR)
 
